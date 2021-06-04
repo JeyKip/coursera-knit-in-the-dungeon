@@ -1,10 +1,11 @@
-import pygame
 import os
-import Objects
-import ScreenEngine
-import Logic
-import Service
 
+import Logic
+import Objects
+import Service
+from Images import FixturesProvider, SpecialFixturesProvider
+from ScreenEngine import *
+from Settings import ObjectStatistic, SettingsProvider
 
 SCREEN_DIM = (800, 600)
 
@@ -15,48 +16,41 @@ KEYBOARD_CONTROL = True
 
 if not KEYBOARD_CONTROL:
     import numpy as np
+
     answer = np.zeros(4, dtype=float)
 
-base_stats = {
-    "strength": 20,
-    "endurance": 20,
-    "intelligence": 5,
-    "luck": 5
-}
 
-
-def create_game(sprite_size, is_new):
+def create_game(sprite_size):
     global hero, engine, drawer, iteration
-    if is_new:
-        hero = Objects.Hero(base_stats, Service.create_sprite(
-            os.path.join("texture", "Hero.png"), sprite_size))
-        engine = Logic.GameEngine()
-        Service.service_init(sprite_size)
-        Service.reload_game(engine, hero)
-        with ScreenEngine as SE:
-            drawer = SE.GameSurface((640, 480), pygame.SRCALPHA, (0, 480),
-                                    SE.ProgressBar((640, 120), (640, 0),
-                                                   SE.InfoWindow((160, 600), (50, 50),
-                                                                 SE.HelpWindow((700, 500), pygame.SRCALPHA, (0, 0),
-                                                                               SE.ScreenHandle(
-                                                                                   (0, 0))
-                                                                               ))))
 
-    else:
-        engine.sprite_size = sprite_size
-        hero.sprite = Service.create_sprite(
-            os.path.join("texture", "Hero.png"), sprite_size)
-        Service.service_init(sprite_size, False)
+    settings_provider = SettingsProvider("objects.yml")
+    # todo: remove global variables
+    global fixtures_provider
+    fixtures_provider = FixturesProvider(sprite_size)
+    special_fixtures_provider = SpecialFixturesProvider(fixtures_provider)
 
-    Logic.GameEngine.sprite_size = sprite_size
+    hero_icon = fixtures_provider.load(os.path.join("texture", "Hero.png"))
+    hero_statistic = ObjectStatistic(strength=20, endurance=20, intelligence=5, luck=5)
+    hero = Objects.Hero(hero_statistic, hero_icon)
+    engine = Logic.GameEngine(special_fixtures_provider)
+    Service.service_init(settings_provider, fixtures_provider, special_fixtures_provider)
+    Service.reload_game(engine, hero)
+    drawer = GameSurface((640, 480), pygame.SRCALPHA, (0, 480),
+                         ProgressBar((640, 120), (640, 0),
+                                     InfoWindow((160, 600), (50, 50),
+                                                HelpWindow((700, 500), pygame.SRCALPHA, (0, 0),
+                                                           ScreenHandle(
+                                                               (0, 0))
+                                                           ))))
 
+    engine.set_sprite_size(sprite_size)
     drawer.connect_engine(engine)
 
     iteration = 0
 
 
 size = 60
-create_game(size, True)
+create_game(size)
 
 while engine.working:
 
@@ -67,14 +61,18 @@ while engine.working:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_h:
                     engine.show_help = not engine.show_help
-                if event.key == pygame.K_KP_PLUS:
+                if event.key == pygame.K_w:
+                    # if event.key == pygame.K_KP_PLUS:
                     size = size + 1
-                    create_game(size, False)
-                if event.key == pygame.K_KP_MINUS:
+                    fixtures_provider.set_sprite_size(size)
+                    engine.set_sprite_size(size)
+                # if event.key == pygame.K_KP_MINUS:
+                if event.key == pygame.K_s:
                     size = size - 1
-                    create_game(size, False)
+                    engine.set_sprite_size(size)
+                    fixtures_provider.set_sprite_size(size)
                 if event.key == pygame.K_r:
-                    create_game(size, True)
+                    create_game(size)
                 if event.key == pygame.K_ESCAPE:
                     engine.working = False
                 if engine.game_process:
@@ -92,7 +90,7 @@ while engine.working:
                         iteration += 1
                 else:
                     if event.key == pygame.K_RETURN:
-                        create_game()
+                        create_game(size)
     else:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -111,7 +109,7 @@ while engine.working:
             reward = engine.score - prev_score
             print(reward)
         else:
-            create_game()
+            create_game(size)
 
     gameDisplay.blit(drawer, (0, 0))
     drawer.draw(gameDisplay)

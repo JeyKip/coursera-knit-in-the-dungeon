@@ -1,4 +1,4 @@
-import Service
+from Images import SpecialFixturesProvider
 
 
 class GameEngine:
@@ -11,6 +11,10 @@ class GameEngine:
     score = 0.
     game_process = True
     show_help = False
+    sprite_size = None
+
+    def __init__(self, special_fixture_provider: SpecialFixturesProvider):
+        self.__special_fixture_provider = special_fixture_provider
 
     def subscribe(self, obj):
         self.subscribers.add(obj)
@@ -22,6 +26,9 @@ class GameEngine:
     def notify(self, message):
         for i in self.subscribers:
             i.update(message)
+
+    def set_sprite_size(self, sprite_size):
+        self.sprite_size = sprite_size
 
     # HERO
     def add_hero(self, hero):
@@ -36,28 +43,28 @@ class GameEngine:
     # MOVEMENT
     def move_up(self):
         self.score -= 0.02
-        if self.map[self.hero.position[1] - 1][self.hero.position[0]] == Service.wall:
+        if self.map[self.hero.position[1] - 1][self.hero.position[0]] == self.__special_fixture_provider.get_wall():
             return
         self.hero.position[1] -= 1
         self.interact()
 
     def move_down(self):
         self.score -= 0.02
-        if self.map[self.hero.position[1] + 1][self.hero.position[0]] == Service.wall:
+        if self.map[self.hero.position[1] + 1][self.hero.position[0]] == self.__special_fixture_provider.get_wall():
             return
         self.hero.position[1] += 1
         self.interact()
 
     def move_left(self):
         self.score -= 0.02
-        if self.map[self.hero.position[1]][self.hero.position[0] - 1] == Service.wall:
+        if self.map[self.hero.position[1]][self.hero.position[0] - 1] == self.__special_fixture_provider.get_wall():
             return
         self.hero.position[0] -= 1
         self.interact()
 
     def move_right(self):
         self.score -= 0.02
-        if self.map[self.hero.position[1]][self.hero.position[0] + 1] == Service.wall:
+        if self.map[self.hero.position[1]][self.hero.position[0] + 1] == self.__special_fixture_provider.get_wall():
             return
         self.hero.position[0] += 1
         self.interact()

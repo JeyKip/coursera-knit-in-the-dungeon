@@ -41,9 +41,11 @@ class Creature(AbstractObject):
         self.image = icon
         self.stats = stats
         self.position = position
+        self.max_hp = 0
         self.calc_max_HP()
         self.hp = self.max_hp
 
+    # noinspection PyPep8Naming
     def calc_max_HP(self):
         self.max_hp = 5 + self.stats.endurance * 2
 

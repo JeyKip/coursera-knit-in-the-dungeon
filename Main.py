@@ -1,129 +1,157 @@
 import os
 
+import numpy as np
+
 import EventHandlers
-import Logic
-import Objects
-import Service
 from Event import Event
 from EventHandlers import EventHandler
 from Images import FixturesProvider, SpecialFixturesProvider
+from Logic import GameEngine
+from Objects import Hero
 from ScreenEngine import *
-from Settings import ObjectStatistic, SettingsProvider
-
-SCREEN_DIM = (800, 600)
-
-pygame.init()
-gameDisplay = pygame.display.set_mode(SCREEN_DIM)
-pygame.display.set_caption("MyRPG")
-KEYBOARD_CONTROL = True
-
-if not KEYBOARD_CONTROL:
-    import numpy as np
-
-    answer = np.zeros(4, dtype=float)
+from Service import LevelsProvider
+from Settings import SettingsProvider, ObjectStatistic
 
 
-def create_game(sprite_size):
-    global hero, engine, drawer, iteration
+class KnightInTheDungeonGame:
+    SCREEN_DIM = (800, 600)
+    KEYBOARD_CONTROL = True
+    DEFAULT_SPRITE_SIZE = 60
+    SETTINGS_FILE_PATH = "objects.yml"
+    LEVELS_FILE_PATH = "levels.yml"
+    HERO_FIXTURE_PATH = os.path.join("texture", "Hero.png")
 
-    settings_provider = SettingsProvider("objects.yml")
-    # todo: remove global variables
-    global fixtures_provider
-    fixtures_provider = FixturesProvider(sprite_size)
-    special_fixtures_provider = SpecialFixturesProvider(fixtures_provider)
-    levels_provider = Service.LevelsProvider("levels.yml", settings_provider, fixtures_provider,
-                                             special_fixtures_provider)
+    def __enter__(self):
+        pygame.init()
+        pygame.display.set_caption("MyRPG")
 
-    hero_icon = fixtures_provider.load(os.path.join("texture", "Hero.png"))
-    hero_statistic = ObjectStatistic(strength=20, endurance=20, intelligence=5, luck=5)
-    hero = Objects.Hero(hero_statistic, hero_icon)
-    engine = Logic.GameEngine(special_fixtures_provider)
+        self.__display = pygame.display.set_mode(KnightInTheDungeonGame.SCREEN_DIM)
+        self.__settings_provider = SettingsProvider(KnightInTheDungeonGame.SETTINGS_FILE_PATH)
+        self.__fixtures_provider = FixturesProvider(KnightInTheDungeonGame.DEFAULT_SPRITE_SIZE)
+        self.__special_fixtures_provider = SpecialFixturesProvider(self.__fixtures_provider)
 
-    # run game by passing direct event into event handler
-    event_handler = EventHandler(engine, levels_provider)
-    event_handler.update(Event(EventHandlers.RELOAD_GAME_EVENT, hero))
+        self.__start_game(KnightInTheDungeonGame.DEFAULT_SPRITE_SIZE)
 
-    drawer = GameSurface((640, 480), pygame.SRCALPHA, (0, 480),
-                         ProgressBar((640, 120), (640, 0),
-                                     InfoWindow((160, 600), (50, 50),
-                                                HelpWindow((700, 500), pygame.SRCALPHA, (0, 0),
-                                                           ScreenHandle(
-                                                               (0, 0))
-                                                           ))))
+        return self
 
-    engine.set_sprite_size(sprite_size)
-    drawer.connect_engine(engine)
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pygame.display.quit()
+        pygame.quit()
 
-    iteration = 0
+    def __start_game(self, sprite_size):
+        self.__levels_provider = LevelsProvider(KnightInTheDungeonGame.LEVELS_FILE_PATH,
+                                                self.__settings_provider, self.__fixtures_provider,
+                                                self.__special_fixtures_provider)
+        self.__hero = self.__create_hero()
+        self.__engine = GameEngine(self.__special_fixtures_provider)
+        self.__engine.sprite_size = sprite_size
 
+        # initialize map and statistic for the beginning of the game
+        self.__event_handler = EventHandler(self.__engine, self.__levels_provider)
+        self.__event_handler.update(Event(EventHandlers.RELOAD_GAME_EVENT, self.__hero))
 
-size = 60
-create_game(size)
+        self.__drawer = self.__create_drawer()
+        self.__drawer.connect_engine(self.__engine)
 
-while engine.working:
+    def __create_hero(self):
+        hero_icon = self.__fixtures_provider.load(KnightInTheDungeonGame.HERO_FIXTURE_PATH)
+        hero_statistic = ObjectStatistic(strength=20, endurance=20, intelligence=5, luck=5)
+        hero = Hero(hero_statistic, hero_icon)
 
-    if KEYBOARD_CONTROL:
+        return hero
+
+    @staticmethod
+    def __create_drawer():
+        screen_handler = ScreenHandle((0, 0))
+        help_window = HelpWindow((700, 500), pygame.SRCALPHA, (0, 0), screen_handler)
+        info_window = InfoWindow((160, 600), (50, 50), help_window)
+        progress_bar = ProgressBar((640, 120), (640, 0), info_window)
+        game_surface = GameSurface((640, 480), pygame.SRCALPHA, (0, 480), progress_bar)
+
+        return game_surface
+
+    def run(self):
+        while self.__engine.working:
+            if KnightInTheDungeonGame.KEYBOARD_CONTROL:
+                self.__handle_keyboard_events()
+            else:
+                self.__handle_autoplay_events()
+            self.__update_screen()
+
+    def __handle_keyboard_events(self):
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                engine.working = False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_h:
-                    engine.show_help = not engine.show_help
-                if event.key == pygame.K_w:
-                    # if event.key == pygame.K_KP_PLUS:
-                    size = size + 1
-                    fixtures_provider.set_sprite_size(size)
-                    engine.set_sprite_size(size)
-                # if event.key == pygame.K_KP_MINUS:
-                if event.key == pygame.K_s:
-                    size = size - 1
-                    engine.set_sprite_size(size)
-                    fixtures_provider.set_sprite_size(size)
-                if event.key == pygame.K_r:
-                    create_game(size)
-                if event.key == pygame.K_ESCAPE:
-                    engine.working = False
-                if engine.game_process:
-                    if event.key == pygame.K_UP:
-                        engine.move_up()
-                        iteration += 1
-                    elif event.key == pygame.K_DOWN:
-                        engine.move_down()
-                        iteration += 1
-                    elif event.key == pygame.K_LEFT:
-                        engine.move_left()
-                        iteration += 1
-                    elif event.key == pygame.K_RIGHT:
-                        engine.move_right()
-                        iteration += 1
-                else:
-                    if event.key == pygame.K_RETURN:
-                        create_game(size)
-    else:
+            self.__handle_quit_event(event)
+            self.__handle_show_help_event(event)
+            self.__handle_resize_event(event)
+            self.__handle_restart_game_event(event)
+            self.__handle_move_event(event)
+
+    def __handle_quit_event(self, event):
+        if event.type == pygame.QUIT:
+            self.__engine.working = False
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            self.__engine.working = False
+
+    def __handle_show_help_event(self, event):
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_h:
+            self.__engine.show_help = not self.__engine.show_help
+
+    def __handle_resize_event(self, event):
+        sprite_size = self.__engine.sprite_size
+
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_w:  # if event.key == pygame.K_KP_PLUS:
+                self.__change_sprite_size(sprite_size + 1)
+            elif event.key == pygame.K_s:  # elif event.key == pygame.K_KP_MINUS:
+                self.__change_sprite_size(sprite_size - 1)
+
+    def __change_sprite_size(self, sprite_size):
+        self.__fixtures_provider.set_sprite_size(sprite_size)
+        self.__engine.sprite_size = sprite_size
+
+    def __handle_restart_game_event(self, event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_r or (event.key == pygame.K_RETURN and not self.__engine.game_process):
+                self.__start_game(self.__engine.sprite_size)
+
+    def __handle_move_event(self, event):
+        if event.type == pygame.KEYDOWN and self.__engine.game_process:
+            if event.key == pygame.K_UP:
+                self.__engine.move_up()
+            elif event.key == pygame.K_DOWN:
+                self.__engine.move_down()
+            elif event.key == pygame.K_LEFT:
+                self.__engine.move_left()
+            elif event.key == pygame.K_RIGHT:
+                self.__engine.move_right()
+
+    def __handle_autoplay_events(self):
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                engine.working = False
-        if engine.game_process:
+            self.__handle_quit_event(event)
+
+        if self.__engine.game_process:
             actions = [
-                engine.move_right,
-                engine.move_left,
-                engine.move_up,
-                engine.move_down,
+                self.__engine.move_right,
+                self.__engine.move_left,
+                self.__engine.move_up,
+                self.__engine.move_down,
             ]
             answer = np.random.randint(0, 100, 4)
-            prev_score = engine.score
-            move = actions[np.argmax(answer)]()
-            state = pygame.surfarray.array3d(gameDisplay)
-            reward = engine.score - prev_score
+            prev_score = self.__engine.score
+            actions[np.argmax(answer)]()
+            pygame.surfarray.array3d(self.__display)
+            reward = self.__engine.score - prev_score
             print(reward)
         else:
-            create_game(size)
+            self.__start_game(self.__engine.sprite_size)
 
-    gameDisplay.blit(drawer, (0, 0))
-    drawer.draw(gameDisplay)
+    def __update_screen(self):
+        self.__display.blit(self.__drawer, (0, 0))
+        self.__drawer.draw(self.__display)
+        pygame.display.update()
 
-    pygame.display.update()
 
-pygame.display.quit()
-pygame.quit()
-exit(0)
+if __name__ == "__main__":
+    with KnightInTheDungeonGame() as game:
+        game.run()
+        exit(0)

@@ -99,7 +99,7 @@ class GameSurface(ScreenHandle):
             self.fill(Colors.WHITE)
 
     def draw_objects(self):
-        for obj in self.engine.objects:
+        for obj in self.engine.get_objects():
             obj.draw(self)
 
     def draw_object(self, sprite, coord):

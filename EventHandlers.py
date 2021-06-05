@@ -46,7 +46,7 @@ class ReloadGameEventHandler(GameEventHandler):
     def action(self, engine: GameEngine, hero: Hero):
         engine.level += 1
         hero.position = [1, 1]
-        engine.objects = []
+        engine.delete_objects()
 
         levels = self.__levels_provider.get_levels()
         level_max = len(levels) - 1
@@ -57,7 +57,7 @@ class ReloadGameEventHandler(GameEventHandler):
 
         engine.load_map(_map)
         engine.add_objects(_objects)
-        engine.add_hero(hero)
+        engine.hero = hero
 
 
 class RestoreHPEventHandler(GameEventHandler):

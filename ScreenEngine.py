@@ -189,7 +189,8 @@ class InfoWindow(ScreenHandle):
         self.data = collections.deque(clear, maxlen=self.len)
 
     def update(self, value):
-        self.data.append(f"> {str(value)}")
+        if isinstance(value, str):
+            self.data.append(f"> {str(value)}")
 
     def draw(self, canvas):
         self.fill(self.background_color)

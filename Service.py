@@ -1,5 +1,6 @@
 import os
 import random
+from typing import Type, List
 
 import yaml
 
@@ -12,94 +13,53 @@ ENEMY_TEXTURE = os.path.join("texture", "enemies")
 ALLY_TEXTURE = os.path.join("texture", "ally")
 
 
-def reload_game(engine, hero):
-    global level_list
-    level_list_max = len(level_list) - 1
-    engine.level += 1
-    hero.position = [1, 1]
-    engine.objects = []
-    generator = level_list[min(engine.level, level_list_max)]
-    _map = generator['map'].get_map()
-    engine.load_map(_map)
-    engine.add_objects(generator['obj'].get_objects(_map))
-    engine.add_hero(hero)
+class Level:
+    def __init__(self, level_map, level_objects):
+        self.__level_map = level_map
+        self.__level_objects = level_objects
 
+    @property
+    def level_map(self):
+        return self.__level_map
 
-def restore_hp(engine, hero):
-    engine.score += 0.1
-    hero.hp = hero.max_hp
-    engine.notify("HP restored")
-
-
-def apply_blessing(engine, hero):
-    gold_should_be_taken_from_hero = int(20 * 1.5 ** engine.level) - 2 * hero.stats.intelligence
-
-    if hero.gold >= gold_should_be_taken_from_hero:
-        engine.score += 0.2
-        hero.gold -= gold_should_be_taken_from_hero
-        if random.randint(0, 1) == 0:
-            engine.hero = Objects.Blessing(hero)
-            engine.notify("Blessing applied")
-        else:
-            engine.hero = Objects.Berserk(hero)
-            engine.notify("Berserk applied")
-    else:
-        engine.score -= 0.1
-
-
-def remove_effect(engine, hero):
-    gold_should_be_taken_from_hero = int(10 * 1.5 ** engine.level) - 2 * hero.stats.intelligence
-
-    if hero.gold >= gold_should_be_taken_from_hero and "base" in dir(hero):
-        hero.gold -= gold_should_be_taken_from_hero
-        engine.hero = hero.base
-        engine.hero.calc_max_HP()
-        engine.notify("Effect removed")
-
-
-def add_gold(engine, hero):
-    if random.randint(1, 10) == 1:
-        engine.score -= 0.05
-        engine.hero = Objects.Weakness(hero)
-        engine.notify("You were cursed")
-    else:
-        engine.score += 0.1
-        gold = int(random.randint(10, 1000) * (1.1 ** (engine.hero.level - 1)))
-        hero.gold += gold
-        engine.notify(f"{gold} gold added")
-
-
-object_list_actions = {
-    'reload_game': reload_game,
-    'add_gold': add_gold,
-    'apply_blessing': apply_blessing,
-    'remove_effect': remove_effect,
-    'restore_hp': restore_hp
-}
+    @property
+    def level_objects(self):
+        return self.__level_objects
 
 
 class MapFactory:
-    class Map:
-        pass
-
-    class Objects:
-        pass
+    __settings_provider: SettingsProvider = None
+    __fixtures_provider: FixturesProvider = None
+    __special_fixtures_provider: SpecialFixturesProvider = None
 
     @classmethod
-    def from_yaml(cls, loader, node):
-        # FIXME
-        # get _map and _obj
+    def from_yaml(cls, loader, node) -> Level:
+        _map = cls.create_map()
+        _obj = cls.create_objects()
 
-        # return {'map': _map, 'obj': _obj}
-        return {'map': cls.create_map(), 'obj': cls.create_objects()}
+        return Level(_map, _obj)
 
     @classmethod
     def create_map(cls):
-        return cls.Map()
+        # noinspection PyUnresolvedReferences
+        return cls.Map(cls.__special_fixtures_provider)
 
     @classmethod
     def create_objects(cls):
-        return cls.Objects()
+        # noinspection PyUnresolvedReferences
+        return cls.Objects(cls.__settings_provider, cls.__fixtures_provider, cls.__special_fixtures_provider)
+
+    @classmethod
+    def register_settings_provider(cls, settings_provider: SettingsProvider):
+        cls.__settings_provider = settings_provider
+
+    @classmethod
+    def register_fixtures_provider(cls, fixtures_provider: FixturesProvider):
+        cls.__fixtures_provider = fixtures_provider
+
+    @classmethod
+    def register_special_fixtures_provider(cls, special_fixtures_provider):
+        cls.__special_fixtures_provider = special_fixtures_provider
 
 
 class EndMap(MapFactory):
@@ -164,7 +124,6 @@ class RandomMap(MapFactory):
             return self.__map
 
     class Objects:
-
         def __init__(
                 self,
                 settings_provider: SettingsProvider,
@@ -196,8 +155,7 @@ class RandomMap(MapFactory):
                                          random.randint(1, 39))
 
                     sprite = self.__fixtures_provider.load(os.path.join(OBJECT_TEXTURE, prop.sprite))
-                    action = object_list_actions[prop.action]
-                    self.__objects.append(Objects.Ally(sprite, action, coord))
+                    self.__objects.append(Objects.Ally(sprite, prop.action, coord))
 
             for prop in self.__settings_provider.get_ally():
                 for i in range(random.randint(prop.min_count, prop.max_count)):
@@ -217,8 +175,7 @@ class RandomMap(MapFactory):
                                          random.randint(1, 39))
 
                     sprite = self.__fixtures_provider.load(os.path.join(ALLY_TEXTURE, prop.sprite))
-                    action = object_list_actions[prop.action]
-                    self.__objects.append(Objects.Ally(sprite, action, coord))
+                    self.__objects.append(Objects.Ally(sprite, prop.action, coord))
 
             for prop in self.__settings_provider.get_enemies():
                 for i in range(random.randint(0, 5)):
@@ -246,29 +203,41 @@ class RandomMap(MapFactory):
 # FIXME
 # add classes for YAML !empty_map and !special_map{}
 
-def create_random_map(
-        settings_provider: SettingsProvider,
-        fixtures_provider: FixturesProvider,
-        special_fixtures_provider: SpecialFixturesProvider
-):
-    return {
-        'map': RandomMap.Map(special_fixtures_provider),
-        'obj': RandomMap.Objects(settings_provider, fixtures_provider, special_fixtures_provider)
-    }
 
+class LevelsProvider:
+    def __init__(
+            self,
+            levels_settings_file_path: str,
+            settings_provider: SettingsProvider,
+            fixtures_provider: FixturesProvider,
+            special_fixtures_provider: SpecialFixturesProvider
+    ):
+        self.__settings_provider = settings_provider
+        self.__fixtures_provider = fixtures_provider
+        self.__special_fixtures_provider = special_fixtures_provider
+        self.__levels = self.__load_levels(levels_settings_file_path)
 
-def service_init(
-        settings_provider: SettingsProvider,
-        fixtures_provider: FixturesProvider,
-        special_fixtures_provider: SpecialFixturesProvider
-):
-    global level_list
+    def get_levels(self) -> List[Level]:
+        return self.__levels
 
-    with open("levels.yml", "r") as file:
-        yaml.add_constructor(
-            "!random_map",
-            lambda loader, node: create_random_map(settings_provider, fixtures_provider, special_fixtures_provider)
-        )
+    def __load_levels(self, file_path) -> List[Level]:
+        with open(file_path, "r") as file:
+            yaml.add_constructor("!random_map", lambda loader, node: self.__create_level(RandomMap, loader, node))
 
-        level_list = yaml.load(file.read())['levels']
-        level_list.append({'map': EndMap.Map(special_fixtures_provider), 'obj': EndMap.Objects()})
+            levels = yaml.load(file.read())['levels']
+            levels.append(self.__create_end_level())
+
+            return levels
+
+    def __create_level(self, map_factory: Type[MapFactory], loader, node):
+        map_factory.register_settings_provider(self.__settings_provider)
+        map_factory.register_fixtures_provider(self.__fixtures_provider)
+        map_factory.register_special_fixtures_provider(self.__special_fixtures_provider)
+
+        return map_factory.from_yaml(loader, node)
+
+    def __create_end_level(self):
+        _map = EndMap.Map(self.__special_fixtures_provider)
+        _obj = EndMap.Objects()
+
+        return Level(_map, _obj)

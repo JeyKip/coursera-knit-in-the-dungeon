@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+from EventHandlers import Event
+
 
 class AbstractObject(ABC):
 
@@ -28,7 +30,7 @@ class Ally(AbstractObject, Interactive):
         self.position = position
 
     def interact(self, engine, hero):
-        self.action(engine, hero)
+        engine.notify(Event(self.action, hero))
 
 
 class Creature(AbstractObject):
@@ -50,6 +52,7 @@ class Hero(Creature):
 
     def __init__(self, stats, icon):
         pos = [1, 1]
+        self.base = None
         self.level = 1
         self.exp = 0
         self.gold = 0

@@ -1,8 +1,11 @@
 import os
 
+import EventHandlers
 import Logic
 import Objects
 import Service
+from Event import Event
+from EventHandlers import EventHandler
 from Images import FixturesProvider, SpecialFixturesProvider
 from ScreenEngine import *
 from Settings import ObjectStatistic, SettingsProvider
@@ -28,13 +31,18 @@ def create_game(sprite_size):
     global fixtures_provider
     fixtures_provider = FixturesProvider(sprite_size)
     special_fixtures_provider = SpecialFixturesProvider(fixtures_provider)
+    levels_provider = Service.LevelsProvider("levels.yml", settings_provider, fixtures_provider,
+                                             special_fixtures_provider)
 
     hero_icon = fixtures_provider.load(os.path.join("texture", "Hero.png"))
     hero_statistic = ObjectStatistic(strength=20, endurance=20, intelligence=5, luck=5)
     hero = Objects.Hero(hero_statistic, hero_icon)
     engine = Logic.GameEngine(special_fixtures_provider)
-    Service.service_init(settings_provider, fixtures_provider, special_fixtures_provider)
-    Service.reload_game(engine, hero)
+
+    # run game by passing direct event into event handler
+    event_handler = EventHandler(engine, levels_provider)
+    event_handler.update(Event(EventHandlers.RELOAD_GAME_EVENT, hero))
+
     drawer = GameSurface((640, 480), pygame.SRCALPHA, (0, 480),
                          ProgressBar((640, 120), (640, 0),
                                      InfoWindow((160, 600), (50, 50),

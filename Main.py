@@ -63,7 +63,8 @@ class KnightInTheDungeonGame:
     @staticmethod
     def __create_drawer():
         screen_handler = ScreenHandle((0, 0))
-        help_window = HelpWindow((700, 500), pygame.SRCALPHA, (0, 0), screen_handler)
+        game_over_window = GameOverWindow((500, 200), pygame.SRCALPHA, (0, 0), screen_handler)
+        help_window = HelpWindow((700, 500), pygame.SRCALPHA, (150, 140), game_over_window)
         info_window = InfoWindow((160, 600), (50, 50), help_window)
         progress_bar = ProgressBar((640, 120), (640, 0), info_window)
         game_surface = GameSurface((640, 480), pygame.SRCALPHA, (0, 480), progress_bar)

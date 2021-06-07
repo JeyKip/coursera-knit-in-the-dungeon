@@ -141,3 +141,6 @@ class GameEngine:
 
     def delete_objects(self):
         self.__objects.clear()
+
+    def check_game_is_over(self):
+        self.__game_process = self.__hero.hp > 0

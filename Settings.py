@@ -14,17 +14,33 @@ class ObjectStatistic:
     def strength(self):
         return self.__strength
 
+    @strength.setter
+    def strength(self, value):
+        self.__strength = value
+
     @property
     def endurance(self):
         return self.__endurance
+
+    @endurance.setter
+    def endurance(self, value):
+        self.__endurance = value
 
     @property
     def intelligence(self):
         return self.__intelligence
 
+    @intelligence.setter
+    def intelligence(self, value):
+        self.__intelligence = value
+
     @property
     def luck(self):
         return self.__luck
+
+    @luck.setter
+    def luck(self, value):
+        self.__luck = value
 
     def copy(self):
         return ObjectStatistic(self.__strength, self.__endurance, self.__intelligence, self.__luck)

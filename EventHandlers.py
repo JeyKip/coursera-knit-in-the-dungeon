@@ -45,7 +45,7 @@ class ReloadGameEventHandler(GameEventHandler):
 
     def action(self, engine: GameEngine, hero: Hero):
         engine.level += 1
-        hero.position = [1, 1]
+        hero.reset_position()
         engine.delete_objects()
 
         levels = self.__levels_provider.get_levels()
@@ -63,7 +63,7 @@ class ReloadGameEventHandler(GameEventHandler):
 class RestoreHPEventHandler(GameEventHandler):
     def action(self, engine: GameEngine, hero: Hero):
         engine.score += 0.1
-        hero.hp = hero.max_hp
+        hero.restore_hp()
         engine.notify("HP restored")
 
 
@@ -80,6 +80,7 @@ class ApplyBlessingEventHandler(GameEventHandler):
             else:
                 engine.hero = Berserk(hero)
                 engine.notify("Berserk applied")
+            engine.check_game_is_over()
         else:
             engine.score -= 0.1
 
@@ -88,10 +89,12 @@ class RemoveEffectEventHandler(GameEventHandler):
     def action(self, engine: GameEngine, hero: Hero):
         gold_should_be_taken_from_hero = int(10 * 1.5 ** engine.level) - 2 * hero.stats.intelligence
 
-        if hero.gold >= gold_should_be_taken_from_hero and "base" in dir(hero) and hero.base is not None:
+        if hero.gold >= gold_should_be_taken_from_hero and "base" in dir(hero):
             hero.gold -= gold_should_be_taken_from_hero
             engine.hero = hero.base
-            engine.hero.calc_max_HP()
+            engine.hero.max_hp = engine.hero.calc_max_HP()
+            engine.hero.hp = min(engine.hero.hp, engine.hero.max_hp)
+            engine.check_game_is_over()
             engine.notify("Effect removed")
 
 
@@ -103,9 +106,10 @@ class AddGoldEventHandler(GameEventHandler):
             engine.notify("You were cursed")
         else:
             engine.score += 0.1
-            gold = int(random.randint(10, 1000) * (1.1 ** (engine.hero.level - 1)))
+            gold = int(random.randint(10, 1000) * (1.1 ** (hero.level - 1)))
             hero.gold += gold
             engine.notify(f"{gold} gold added")
+            engine.check_game_is_over()
 
 
 class MissingEventHandlerError(Exception):

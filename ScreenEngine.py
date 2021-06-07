@@ -129,16 +129,16 @@ class ProgressBar(ScreenHandle):
         pygame.draw.rect(self, Colors.BLACK, (50, 30, 200, 30), 2)
         pygame.draw.rect(self, Colors.BLACK, (50, 70, 200, 30), 2)
 
-        pygame.draw.rect(self, Colors.RED, (50, 30, 200 * self.engine.hero.hp / self.engine.hero.max_hp, 30))
+        hp_percentage = 0 if self.engine.hero.max_hp == 0 else self.engine.hero.hp / self.engine.hero.max_hp
+        pygame.draw.rect(self, Colors.RED, (50, 30, 200 * hp_percentage, 30))
         pygame.draw.rect(self, Colors.GREEN, (50, 70,
-                                              200 * self.engine.hero.exp / (
-                                                      100 * (2 ** (self.engine.hero.level - 1))), 30))
+                                              200 * self.engine.hero.exp / self.engine.hero.next_level_exp, 30))
 
         font = pygame.font.SysFont("comicsansms", 20)
         self.blit(font.render(f'Hero at {self.engine.hero.position}', True, Colors.BLACK),
                   (250, 0))
 
-        self.blit(font.render(f'{self.engine.level} floor', True, Colors.BLACK),
+        self.blit(font.render(f'{self.engine.level + 1} floor', True, Colors.BLACK),
                   (10, 0))
 
         self.blit(font.render(f'HP', True, Colors.BLACK),
@@ -149,7 +149,7 @@ class ProgressBar(ScreenHandle):
         self.blit(font.render(f'{self.engine.hero.hp}/{self.engine.hero.max_hp}', True, Colors.BLACK),
                   (60, 30))
         self.blit(
-            font.render(f'{self.engine.hero.exp}/{(100 * (2 ** (self.engine.hero.level - 1)))}', True, Colors.BLACK),
+            font.render(f'{self.engine.hero.exp}/{self.engine.hero.next_level_exp}', True, Colors.BLACK),
             (60, 70))
 
         self.blit(font.render(f'Level', True, Colors.BLACK),
@@ -223,19 +223,19 @@ class HelpWindow(ScreenHandle):
         self.data.append(["Num-", "Zoom -"])
         self.data.append([" R ", "Restart Game"])
 
-    # FIXME You can add some help information
-
     def connect_engine(self, engine):
         super().connect_engine(engine)
 
     def draw(self, canvas):
         alpha = 0
-        if self.engine.show_help:
+        show_help = self.engine.show_help and self.engine.game_process
+
+        if show_help:
             alpha = 128
         self.fill((0, 0, 0, alpha))
         font1 = pygame.font.SysFont("courier", 24)
         font2 = pygame.font.SysFont("serif", 24)
-        if self.engine.show_help:
+        if show_help:
             pygame.draw.lines(self, (255, 0, 0, 255), True, [
                 (0, 0), (700, 0), (700, 500), (0, 500)], 5)
             for i, text in enumerate(self.data):
@@ -243,5 +243,30 @@ class HelpWindow(ScreenHandle):
                           (50, 50 + 30 * i))
                 self.blit(font2.render(text[1], True, (128, 128, 255)),
                           (150, 50 + 30 * i))
+
+        super().draw(canvas)
+
+
+class GameOverWindow(ScreenHandle):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def connect_engine(self, engine):
+        super().connect_engine(engine)
+
+    def draw(self, canvas):
+        alpha = 0
+        if not self.engine.game_process:
+            alpha = 128
+        self.fill((0, 0, 0, alpha))
+        font1 = pygame.font.SysFont("courier", 35)
+        font1.set_bold(True)
+        font2 = pygame.font.SysFont("courier", 24)
+        font2.set_bold(True)
+        if not self.engine.game_process:
+            pygame.draw.lines(self, (255, 0, 0, 255), True, [
+                (0, 0), (500, 0), (500, 200), (0, 200)], 5)
+            self.blit(font1.render("Game Over", True, (255, 0, 0)), (145, 50))
+            self.blit(font2.render("Press R to start a new game.", True, (255, 0, 0)), (30, 100))
 
         super().draw(canvas)

@@ -31,48 +31,48 @@ class GameEngine:
         return self.__level
 
     @level.setter
-    def level(self, level):
-        self.__level = level
+    def level(self, value):
+        self.__level = value
 
     @property
     def score(self):
         return self.__score
 
     @score.setter
-    def score(self, score):
-        self.__score = score
+    def score(self, value):
+        self.__score = value
 
     @property
     def working(self):
         return self.__working
 
     @working.setter
-    def working(self, working):
-        self.__working = working
+    def working(self, value):
+        self.__working = value
 
     @property
     def game_process(self):
         return self.__game_process
 
     @game_process.setter
-    def game_process(self, game_process):
-        self.__game_process = game_process
+    def game_process(self, value):
+        self.__game_process = value
 
     @property
     def show_help(self):
         return self.__show_help
 
     @show_help.setter
-    def show_help(self, show_help):
-        self.__show_help = show_help
+    def show_help(self, value):
+        self.__show_help = value
 
     @property
     def sprite_size(self):
         return self.__sprite_size
 
     @sprite_size.setter
-    def sprite_size(self, sprite_size):
-        self.__sprite_size = sprite_size
+    def sprite_size(self, value):
+        self.__sprite_size = value
 
     # HERO
     @property

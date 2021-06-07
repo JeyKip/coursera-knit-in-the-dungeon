@@ -1,3 +1,4 @@
+import random
 from abc import ABC, abstractmethod
 
 from Event import Event
@@ -58,7 +59,7 @@ class Creature(AbstractObject):
 
     @hp.setter
     def hp(self, value):
-        self._hp = min(value, self._max_hp)
+        self._hp = max(min(value, self._max_hp), 0)
 
     @property
     def stats(self):
@@ -107,6 +108,7 @@ class Hero(Creature):
     @exp.setter
     def exp(self, value):
         self._exp = value
+        self._level_up()
 
     @property
     def next_level_exp(self):
@@ -124,7 +126,7 @@ class Hero(Creature):
     def gold(self, value):
         self._gold = value
 
-    def level_up(self):
+    def _level_up(self):
         while self._exp >= self._next_level_exp:
             self._level += 1
             self._stats.strength += 2
@@ -242,8 +244,26 @@ class Enemy(Creature, Interactive):
         super().__init__(image, stats, position)
 
     def interact(self, engine, hero):
-        # todo: implement this method - it is unclear now how enemy should interact
-        pass
+        # min damage is 2% from the max hp of the hero
+        min_damage = int(0.02 * hero.max_hp)
+
+        # max damage is 40% from the max hp of the hero
+        max_damage = int(0.4 * hero.max_hp)
+
+        damage = random.randint(min_damage, max_damage)
+        hero.hp -= damage
+
+        if hero.hp <= 0:
+            engine.notify(Event("hero_is_killed", hero))
+        else:
+            old_level = hero.level
+            hero.exp += self.xp
+            new_level = hero.level
+
+            engine.notify(f"Got {self.xp} experience.")
+
+            if old_level != new_level:
+                engine.notify(f"Level updated: {old_level} -> {new_level}.")
 
 
 class Berserk(Effect):

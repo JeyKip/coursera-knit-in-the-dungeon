@@ -12,6 +12,7 @@ RESTORE_HP_EVENT = "restore_hp"
 APPLY_BLESSING_EVENT = "apply_blessing"
 REMOVE_EFFECT_EVENT = "remove_effect"
 ADD_GOLD_EVENT = "add_gold"
+HERO_IS_KILLED_EVENT = "hero_is_killed"
 
 
 class GameEventHandler(ABC):
@@ -112,6 +113,12 @@ class AddGoldEventHandler(GameEventHandler):
             engine.check_game_is_over()
 
 
+class HeroIsKilledEventHandler(GameEventHandler):
+    def action(self, engine: GameEngine, hero: Hero):
+        engine.notify("Hero was killed.")
+        engine.check_game_is_over()
+
+
 class MissingEventHandlerError(Exception):
     pass
 
@@ -124,7 +131,8 @@ class EventHandler:
             RESTORE_HP_EVENT: RestoreHPEventHandler(),
             APPLY_BLESSING_EVENT: ApplyBlessingEventHandler(),
             REMOVE_EFFECT_EVENT: RemoveEffectEventHandler(),
-            ADD_GOLD_EVENT: AddGoldEventHandler()
+            ADD_GOLD_EVENT: AddGoldEventHandler(),
+            HERO_IS_KILLED_EVENT: HeroIsKilledEventHandler()
         }
 
         self.__engine.subscribe(self)

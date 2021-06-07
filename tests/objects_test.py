@@ -28,7 +28,7 @@ class TestObjects:
 
     def test_level_up_without_enough_exp_nothing_should_be_changed(self):
         hero = self.__create_base_hero()
-        hero.level_up()
+        hero.exp = 0
 
         desired_properties = self.__default_hero_properties
         self.__test_hero_properties(hero, desired_properties)
@@ -36,7 +36,6 @@ class TestObjects:
     def test_level_up_with_enough_exp(self):
         hero = self.__create_base_hero()
         hero.exp = 1600
-        hero.level_up()
 
         desired_properties = self.__default_hero_properties.copy()
         desired_properties['level'] = 6

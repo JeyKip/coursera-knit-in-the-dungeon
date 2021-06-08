@@ -107,8 +107,9 @@ class KnightInTheDungeonGame:
                 self.__change_sprite_size(sprite_size - 1)
 
     def __change_sprite_size(self, sprite_size):
-        self.__fixtures_provider.set_sprite_size(sprite_size)
-        self.__engine.sprite_size = sprite_size
+        if 1 <= sprite_size <= 80:
+            self.__fixtures_provider.set_sprite_size(sprite_size)
+            self.__engine.sprite_size = sprite_size
 
     def __handle_restart_game_event(self, event):
         if event.type == pygame.KEYDOWN:

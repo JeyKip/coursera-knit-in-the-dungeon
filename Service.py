@@ -5,7 +5,7 @@ from typing import Type, List
 import yaml
 
 import Objects
-from Images import SpecialFixturesProvider, FixturesProvider
+from Images import SpecialFixturesProvider, FixturesProvider, FixtureType
 from Settings import SettingsProvider
 
 OBJECT_TEXTURE = os.path.join("texture", "objects")
@@ -47,7 +47,7 @@ class MapFactory:
     @classmethod
     def create_objects(cls):
         # noinspection PyUnresolvedReferences
-        return cls.Objects(cls.__settings_provider, cls.__fixtures_provider, cls.__special_fixtures_provider)
+        return cls.Objects(cls.__settings_provider, cls.__fixtures_provider)
 
     @classmethod
     def register_settings_provider(cls, settings_provider: SettingsProvider):
@@ -60,6 +60,24 @@ class MapFactory:
     @classmethod
     def register_special_fixtures_provider(cls, special_fixtures_provider):
         cls.__special_fixtures_provider = special_fixtures_provider
+
+    @staticmethod
+    def calculate_object_coordinates(_map, _objects):
+        coord = (random.randint(1, 39), random.randint(1, 39))
+        intersect = True
+
+        while intersect:
+            intersect = False
+            if _map[coord[1]][coord[0]].fixture_type == FixtureType.WALL:
+                intersect = True
+                coord = (random.randint(1, 39), random.randint(1, 39))
+                continue
+            for obj in _objects:
+                if coord == obj.position or coord == (1, 1):
+                    intersect = True
+                    coord = (random.randint(1, 39), random.randint(1, 39))
+
+        return coord
 
 
 class EndMap(MapFactory):
@@ -107,6 +125,8 @@ class RandomMap(MapFactory):
                 for j in range(41):
                     if i == 0 or j == 0 or i == 40 or j == 40:
                         self.__map[j][i] = self.__special_fixtures_provider.get_wall()
+                    elif i == 1 and j == 1:
+                        self.__map[j][i] = self.__special_fixtures_provider.get_floor_1()
                     else:
                         self.__map[j][i] = [
                             self.__special_fixtures_provider.get_wall(),
@@ -127,77 +147,35 @@ class RandomMap(MapFactory):
         def __init__(
                 self,
                 settings_provider: SettingsProvider,
-                fixtures_provider: FixturesProvider,
-                special_fixtures_provider: SpecialFixturesProvider
+                fixtures_provider: FixturesProvider
         ):
             self.__objects = []
             self.__settings_provider = settings_provider
             self.__fixtures_provider = fixtures_provider
-            self.__special_fixtures_provider = special_fixtures_provider
 
         def get_objects(self, _map):
-
             for prop in self.__settings_provider.get_objects():
-                for i in range(random.randint(prop.min_count, prop.max_count)):
-                    coord = (random.randint(1, 39), random.randint(1, 39))
-                    intersect = True
-                    while intersect:
-                        intersect = False
-                        if _map[coord[1]][coord[0]] == self.__special_fixtures_provider.get_wall():
-                            intersect = True
-                            coord = (random.randint(1, 39),
-                                     random.randint(1, 39))
-                            continue
-                        for obj in self.__objects:
-                            if coord == obj.position or coord == (1, 1):
-                                intersect = True
-                                coord = (random.randint(1, 39),
-                                         random.randint(1, 39))
-
-                    sprite = self.__fixtures_provider.load(os.path.join(OBJECT_TEXTURE, prop.sprite))
-                    self.__objects.append(Objects.Ally(sprite, prop.action, coord))
+                self.__append_ally(_map, prop, OBJECT_TEXTURE)
 
             for prop in self.__settings_provider.get_ally():
-                for i in range(random.randint(prop.min_count, prop.max_count)):
-                    coord = (random.randint(1, 39), random.randint(1, 39))
-                    intersect = True
-                    while intersect:
-                        intersect = False
-                        if _map[coord[1]][coord[0]] == self.__special_fixtures_provider.get_wall():
-                            intersect = True
-                            coord = (random.randint(1, 39),
-                                     random.randint(1, 39))
-                            continue
-                        for obj in self.__objects:
-                            if coord == obj.position or coord == (1, 1):
-                                intersect = True
-                                coord = (random.randint(1, 39),
-                                         random.randint(1, 39))
-
-                    sprite = self.__fixtures_provider.load(os.path.join(ALLY_TEXTURE, prop.sprite))
-                    self.__objects.append(Objects.Ally(sprite, prop.action, coord))
+                self.__append_ally(_map, prop, ALLY_TEXTURE)
 
             for prop in self.__settings_provider.get_enemies():
-                for i in range(random.randint(0, 5)):
-                    coord = (random.randint(1, 30), random.randint(1, 22))
-                    intersect = True
-                    while intersect:
-                        intersect = False
-                        if _map[coord[1]][coord[0]] == self.__special_fixtures_provider.get_wall():
-                            intersect = True
-                            coord = (random.randint(1, 39),
-                                     random.randint(1, 39))
-                            continue
-                        for obj in self.__objects:
-                            if coord == obj.position or coord == (1, 1):
-                                intersect = True
-                                coord = (random.randint(1, 39),
-                                         random.randint(1, 39))
-
-                    sprite = self.__fixtures_provider.load(os.path.join(ENEMY_TEXTURE, prop.sprite))
-                    self.__objects.append(Objects.Enemy(sprite, prop.statistic, prop.experience, coord))
+                self.__append_enemy(_map, prop, ENEMY_TEXTURE)
 
             return self.__objects
+
+        def __append_ally(self, _map, prop, fixture_path):
+            for i in range(random.randint(prop.min_count, prop.max_count)):
+                coord = MapFactory.calculate_object_coordinates(_map, self.__objects)
+                sprite = self.__fixtures_provider.load(os.path.join(fixture_path, prop.sprite))
+                self.__objects.append(Objects.Ally(sprite, prop.action, coord))
+
+        def __append_enemy(self, _map, prop, fixture_path):
+            for i in range(random.randint(0, 5)):
+                coord = MapFactory.calculate_object_coordinates(_map, self.__objects)
+                sprite = self.__fixtures_provider.load(os.path.join(fixture_path, prop.sprite))
+                self.__objects.append(Objects.Enemy(sprite, prop.statistic, prop.experience, coord))
 
 
 # FIXME

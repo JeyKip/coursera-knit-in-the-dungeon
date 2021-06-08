@@ -3,20 +3,32 @@ import os
 import pygame
 
 
+class FixtureType:
+    WALL = "wall"
+    FLOOR_1 = "floor_1"
+    FLOOR_2 = "floor_2"
+    FLOOR_3 = "floor_3"
+
+
 class Fixture:
-    def __init__(self, image_path, image_size):
-        self.__image_size = image_size
-        self.__image = ImageProcessor.load_image(image_path)
-        self.__sprite = ImageProcessor.create_sprite(self.__image, image_size, image_size)
+    def __init__(self, fixture_path, fixture_size, fixture_type=None):
+        self.__fixture_size = fixture_size
+        self.__fixture_type = fixture_type
+        self.__image = ImageProcessor.load_image(fixture_path)
+        self.__sprite = ImageProcessor.create_sprite(self.__image, fixture_size, fixture_size)
 
     def resize(self, image_size):
-        if self.__image_size != image_size:
-            self.__image_size = image_size
+        if self.__fixture_size != image_size:
+            self.__fixture_size = image_size
             self.__sprite = ImageProcessor.create_sprite(self.__image, image_size, image_size)
 
     @property
     def sprite(self):
         return self.__sprite
+
+    @property
+    def fixture_type(self):
+        return self.__fixture_type
 
 
 class ImageProcessor:
@@ -40,13 +52,13 @@ class FixturesProvider:
     def __init__(self, sprite_size):
         self.set_sprite_size(sprite_size)
 
-    def load(self, image_path):
-        if image_path in self.__cache:
-            return self.__cache[image_path]
+    def load(self, fixture_path, fixture_type=None):
+        if fixture_path in self.__cache:
+            return self.__cache[fixture_path]
 
-        self.__cache[image_path] = Fixture(image_path, self.__sprite_size)
+        self.__cache[fixture_path] = Fixture(fixture_path, self.__sprite_size, fixture_type)
 
-        return self.__cache[image_path]
+        return self.__cache[fixture_path]
 
     def set_sprite_size(self, sprite_size):
         if self.__sprite_size != sprite_size:
@@ -57,18 +69,17 @@ class FixturesProvider:
 
 
 class SpecialFixturesProvider:
-
     def __init__(self, fixture_provider: FixturesProvider):
         self.__fixture_provider = fixture_provider
 
     def get_wall(self):
-        return self.__fixture_provider.load(os.path.join("texture", "wall.png"))
+        return self.__fixture_provider.load(os.path.join("texture", "wall.png"), FixtureType.WALL)
 
     def get_floor_1(self):
-        return self.__fixture_provider.load(os.path.join("texture", "Ground_1.png"))
+        return self.__fixture_provider.load(os.path.join("texture", "Ground_1.png"), FixtureType.FLOOR_1)
 
     def get_floor_2(self):
-        return self.__fixture_provider.load(os.path.join("texture", "Ground_2.png"))
+        return self.__fixture_provider.load(os.path.join("texture", "Ground_2.png"), FixtureType.FLOOR_2)
 
     def get_floor_3(self):
-        return self.__fixture_provider.load(os.path.join("texture", "Ground_3.png"))
+        return self.__fixture_provider.load(os.path.join("texture", "Ground_3.png"), FixtureType.FLOOR_3)

@@ -43,7 +43,7 @@ class KnightInTheDungeonGame:
                                                 self.__settings_provider, self.__fixtures_provider,
                                                 self.__special_fixtures_provider)
         self.__hero = self.__create_hero()
-        self.__engine = GameEngine(self.__special_fixtures_provider)
+        self.__engine = GameEngine()
         self.__engine.sprite_size = sprite_size
 
         # initialize map and statistic for the beginning of the game

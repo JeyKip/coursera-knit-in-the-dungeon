@@ -1,9 +1,8 @@
-from Images import SpecialFixturesProvider
+from Images import FixtureType
 
 
 class GameEngine:
-    def __init__(self, special_fixture_provider: SpecialFixturesProvider):
-        self.__special_fixture_provider = special_fixture_provider
+    def __init__(self):
         self.__objects = []
         self.__map = None
         self.__hero = None
@@ -92,28 +91,28 @@ class GameEngine:
     # MOVEMENT
     def move_up(self):
         self.__score -= 0.02
-        if self.__map[self.hero.position[1] - 1][self.hero.position[0]] == self.__special_fixture_provider.get_wall():
+        if self.__map[self.hero.position[1] - 1][self.hero.position[0]].fixture_type == FixtureType.WALL:
             return
         self.hero.position[1] -= 1
         self.interact()
 
     def move_down(self):
         self.__score -= 0.02
-        if self.__map[self.hero.position[1] + 1][self.hero.position[0]] == self.__special_fixture_provider.get_wall():
+        if self.__map[self.hero.position[1] + 1][self.hero.position[0]].fixture_type == FixtureType.WALL:
             return
         self.hero.position[1] += 1
         self.interact()
 
     def move_left(self):
         self.__score -= 0.02
-        if self.__map[self.hero.position[1]][self.hero.position[0] - 1] == self.__special_fixture_provider.get_wall():
+        if self.__map[self.hero.position[1]][self.hero.position[0] - 1].fixture_type == FixtureType.WALL:
             return
         self.hero.position[0] -= 1
         self.interact()
 
     def move_right(self):
         self.__score -= 0.02
-        if self.__map[self.hero.position[1]][self.hero.position[0] + 1] == self.__special_fixture_provider.get_wall():
+        if self.__map[self.hero.position[1]][self.hero.position[0] + 1].fixture_type == FixtureType.WALL:
             return
         self.hero.position[0] += 1
         self.interact()

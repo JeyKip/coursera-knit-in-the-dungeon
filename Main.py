@@ -97,9 +97,9 @@ class KnightInTheDungeonGame:
         sprite_size = self.__engine.sprite_size
 
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_w:  # if event.key == pygame.K_KP_PLUS:
+            if event.key == pygame.K_w:
                 self.__change_sprite_size(sprite_size + 1)
-            elif event.key == pygame.K_s:  # elif event.key == pygame.K_KP_MINUS:
+            elif event.key == pygame.K_s:
                 self.__change_sprite_size(sprite_size - 1)
 
     def __change_sprite_size(self, sprite_size):

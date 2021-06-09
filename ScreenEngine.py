@@ -233,8 +233,8 @@ class HelpWindow(ScreenHandle):
         self.data.append([" ↑ ", "Move Top"])
         self.data.append([" ↓ ", "Move Bottom"])
         self.data.append([" H ", "Show Help"])
-        self.data.append(["Num+", "Zoom +"])
-        self.data.append(["Num-", "Zoom -"])
+        self.data.append([" W ", "Zoom +"])
+        self.data.append([" S ", "Zoom -"])
         self.data.append([" R ", "Restart Game"])
 
     def connect_engine(self, engine):

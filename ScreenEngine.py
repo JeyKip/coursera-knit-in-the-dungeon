@@ -141,9 +141,12 @@ class ProgressBar(ScreenHandle):
         pygame.draw.rect(self, Colors.BLACK, (50, 70, 200, 30), 2)
 
         hp_percentage = 0 if self.engine.hero.max_hp == 0 else self.engine.hero.hp / self.engine.hero.max_hp
+        current_level_points = self.engine.hero.exp - self.engine.hero.prev_level_exp
+        current_level_required_points = self.engine.hero.next_level_exp - self.engine.hero.prev_level_exp
+        exp_percentage = current_level_points / current_level_required_points
+
         pygame.draw.rect(self, Colors.RED, (50, 30, 200 * hp_percentage, 30))
-        pygame.draw.rect(self, Colors.GREEN, (50, 70,
-                                              200 * self.engine.hero.exp / self.engine.hero.next_level_exp, 30))
+        pygame.draw.rect(self, Colors.GREEN, (50, 70, 200 * exp_percentage, 30))
 
         font = pygame.font.SysFont("comicsansms", 20)
         self.blit(font.render(f'Hero at {self.engine.hero.position}', True, Colors.BLACK),

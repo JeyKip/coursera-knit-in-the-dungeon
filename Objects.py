@@ -128,6 +128,7 @@ class Hero(Creature):
     def __init__(self, stats, fixture):
         self._level = 1
         self._exp = 0
+        self._prev_level_exp = 0
         self._next_level_exp = self.calc_next_level_exp()
         self._gold = 0
 
@@ -158,6 +159,14 @@ class Hero(Creature):
         self._next_level_exp = value
 
     @property
+    def prev_level_exp(self):
+        return self._prev_level_exp
+
+    @prev_level_exp.setter
+    def prev_level_exp(self, value):
+        self._prev_level_exp = value
+
+    @property
     def gold(self):
         return self._gold
 
@@ -174,6 +183,7 @@ class Hero(Creature):
             self.endurance += 2
             self.max_hp = self.calc_max_HP()
             self.restore_hp()
+            self.prev_level_exp = self.next_level_exp
             self.next_level_exp = self.calc_next_level_exp()
 
         return old_level, self.level
@@ -274,6 +284,14 @@ class Effect(Hero):
     @next_level_exp.setter
     def next_level_exp(self, value):
         self._base.next_level_exp = value
+
+    @property
+    def prev_level_exp(self):
+        return self._base.prev_level_exp
+
+    @prev_level_exp.setter
+    def prev_level_exp(self, value):
+        self._base.prev_level_exp = value
 
     @property
     def strength(self):

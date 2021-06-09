@@ -4,10 +4,11 @@ levels:
     rat: 5
     bless: 2
   - !special_map
-    rat: 10
-    knight: 5
-    bless: 3
-    heal: 2
+    rat: 20
+    knight: 15
+    bless: 5
+    heal: 5
+    anger: 3
   - !special_map
     rat: 10
     knight: 10

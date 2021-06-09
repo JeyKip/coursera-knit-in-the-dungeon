@@ -7,7 +7,7 @@ from Event import Event
 from EventHandlers import EventHandler
 from Images import FixturesProvider, SpecialFixturesProvider
 from Logic import GameEngine
-from Objects import Hero
+from Objects import Hero, Ally
 from ScreenEngine import *
 from Service import LevelsProvider
 from Settings import SettingsProvider, ObjectStatistic
@@ -48,7 +48,8 @@ class KnightInTheDungeonGame:
 
         # initialize map and statistic for the beginning of the game
         self.__event_handler = EventHandler(self.__engine, self.__levels_provider)
-        self.__event_handler.update(Event(EventHandlers.RELOAD_GAME_EVENT, self.__hero))
+        self.__event_handler.update(
+            Event(EventHandlers.RELOAD_GAME_EVENT, Ally.InteractedWithHeroEventPayload(self.__hero)))
 
         self.__drawer = self.__create_drawer()
         self.__drawer.connect_engine(self.__engine)

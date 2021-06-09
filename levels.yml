@@ -2,10 +2,33 @@ levels:
   - !empty_map {}
   - !special_map
     rat: 5
+    bless: 2
   - !special_map
     rat: 10
     knight: 5
+    bless: 3
+    heal: 2
   - !special_map
     rat: 10
     knight: 10
+    naga: 5
+    anger: 1
+    bless: 2
+    heal: 2
+  - !special_map
+    rat: 15
+    knight: 15
+    naga: 10
+    dragon: 8
+    anger: 3
+    bless: 2
+    heal: 2
+  - !special_map
+    knight: 15
+    naga: 15
+    dragon: 12
+    diablo: 8
+    anger: 2
+    bless: 2
+    heal: 2
   - !random_map {}

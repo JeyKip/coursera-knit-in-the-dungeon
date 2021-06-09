@@ -1,4 +1,4 @@
-from Objects import Hero, Berserk, Blessing, Weakness
+from Objects import Hero, Berserk, Blessing, Weakness, Anger
 from Settings import ObjectStatistic
 
 
@@ -36,6 +36,7 @@ class TestObjects:
     def test_level_up_with_enough_exp(self):
         hero = self.__create_base_hero()
         hero.exp = 1600
+        hero.level_up()
 
         desired_properties = self.__default_hero_properties.copy()
         desired_properties['level'] = 6
@@ -54,15 +55,6 @@ class TestObjects:
 
         desired_properties = self.__default_hero_properties.copy()
         desired_properties['hp'] = 44
-
-        self.__test_hero_properties(hero, desired_properties)
-
-    def test_hp_setter_hp_more_than_max_hap_should_be_equal_to_max_hp(self):
-        hero = self.__create_base_hero()
-        hero.hp = 46
-
-        desired_properties = self.__default_hero_properties.copy()
-        desired_properties['hp'] = 45
 
         self.__test_hero_properties(hero, desired_properties)
 
@@ -117,6 +109,38 @@ class TestObjects:
 
         assert weakened_hero.max_hp == 33, "Maximum health points value wasn't changed after weakness applying"
         assert weakened_hero.hp == 33, "Health points value wasn't changed after weakness applying"
+
+    def test_level_up_and_remove_effect_base_properties_should_be_changed(self):
+        hero = self.__create_base_hero()
+        angry_hero = Anger(hero)
+        angry_hero.exp += 100
+        angry_hero.level_up()
+
+        desired_properties_with_effect = self.__default_hero_properties.copy()
+        desired_properties_with_effect["stats_strength"] = 32
+        desired_properties_with_effect["stats_endurance"] = 37
+        desired_properties_with_effect["stats_intelligence"] = 0
+        desired_properties_with_effect["stats_luck"] = 0
+        desired_properties_with_effect["level"] = 2
+        desired_properties_with_effect["hp"] = 79
+        desired_properties_with_effect["max_hp"] = 79
+        desired_properties_with_effect["exp"] = 100
+        desired_properties_with_effect["next_level_exp"] = 200
+
+        self.__test_hero_properties(angry_hero, desired_properties_with_effect)
+
+        angry_hero = angry_hero.base
+        angry_hero.update_health_points()
+
+        desired_properties_without_effect = desired_properties_with_effect.copy()
+        desired_properties_without_effect["stats_strength"] = 22
+        desired_properties_without_effect["stats_endurance"] = 22
+        desired_properties_without_effect["stats_intelligence"] = 5
+        desired_properties_without_effect["stats_luck"] = 5
+        desired_properties_without_effect["hp"] = 49
+        desired_properties_without_effect["max_hp"] = 49
+
+        self.__test_hero_properties(angry_hero, desired_properties_without_effect)
 
     def __create_base_hero(self):
         return Hero(self.__statistic.copy(), self.__image)

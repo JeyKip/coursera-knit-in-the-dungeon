@@ -143,3 +143,4 @@ class GameEngine:
 
     def check_game_is_over(self):
         self.__game_process = self.__hero.hp > 0
+        return not self.__game_process

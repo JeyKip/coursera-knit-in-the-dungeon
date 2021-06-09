@@ -5,7 +5,7 @@ from typing import Type, List, Tuple
 import yaml
 
 import Objects
-from Images import SpecialFixturesProvider, FixturesProvider, FixtureType
+from Images import FixtureType, SpecialFixtures, Fixture
 from Settings import SettingsProvider
 
 OBJECT_TEXTURE = os.path.join("texture", "objects")
@@ -32,8 +32,6 @@ class MapFactory:
     MAP_HEIGHT = 41
 
     __settings_provider: SettingsProvider = None
-    __fixtures_provider: FixturesProvider = None
-    __special_fixtures_provider: SpecialFixturesProvider = None
 
     @classmethod
     def from_yaml(cls, loader, node) -> Level:
@@ -58,34 +56,26 @@ class MapFactory:
         cls.__settings_provider = settings_provider
 
     @classmethod
-    def register_fixtures_provider(cls, fixtures_provider: FixturesProvider):
-        cls.__fixtures_provider = fixtures_provider
-
-    @classmethod
-    def register_special_fixtures_provider(cls, special_fixtures_provider):
-        cls.__special_fixtures_provider = special_fixtures_provider
-
-    @classmethod
     def generate_map(cls):
         _map = [[0 for _ in range(cls.MAP_WIDTH)] for _ in range(cls.MAP_HEIGHT)]
 
         for i in range(cls.MAP_WIDTH):
             for j in range(cls.MAP_HEIGHT):
                 if i == 0 or j == 0 or i == cls.MAP_HEIGHT - 1 or j == cls.MAP_WIDTH - 1:
-                    _map[j][i] = cls.__special_fixtures_provider.get_wall()
+                    _map[j][i] = SpecialFixtures.WALL
                 elif i == 1 and j == 1:
-                    _map[j][i] = cls.__special_fixtures_provider.get_floor_1()
+                    _map[j][i] = SpecialFixtures.FLOOR_1
                 else:
                     _map[j][i] = [
-                        cls.__special_fixtures_provider.get_wall(),
-                        cls.__special_fixtures_provider.get_floor_1(),
-                        cls.__special_fixtures_provider.get_floor_2(),
-                        cls.__special_fixtures_provider.get_floor_3(),
-                        cls.__special_fixtures_provider.get_floor_1(),
-                        cls.__special_fixtures_provider.get_floor_2(),
-                        cls.__special_fixtures_provider.get_floor_3(),
-                        cls.__special_fixtures_provider.get_floor_1(),
-                        cls.__special_fixtures_provider.get_floor_2()
+                        SpecialFixtures.WALL,
+                        SpecialFixtures.FLOOR_1,
+                        SpecialFixtures.FLOOR_2,
+                        SpecialFixtures.FLOOR_3,
+                        SpecialFixtures.FLOOR_1,
+                        SpecialFixtures.FLOOR_2,
+                        SpecialFixtures.FLOOR_3,
+                        SpecialFixtures.FLOOR_1,
+                        SpecialFixtures.FLOOR_2
                     ][random.randint(0, 8)]
 
         return _map
@@ -134,20 +124,20 @@ class MapFactory:
     def generate_enemies(cls, _map, _existing_objects, min_count, max_count, stats, image_name, experience):
         for i in range(random.randint(min_count, max_count)):
             coord = cls.calculate_object_coordinates(_map, _existing_objects)
-            sprite = cls.__fixtures_provider.load(os.path.join(ENEMY_TEXTURE, image_name))
-            yield Objects.Enemy(sprite, stats, experience, coord)
+            fixture = Fixture(os.path.join(ENEMY_TEXTURE, image_name))
+            yield Objects.Enemy(fixture, stats, experience, coord)
 
     @classmethod
     def _generate_allies_internal(cls, _map, _existing_objects, min_count, max_count, action, image_name, texture_path):
         for i in range(random.randint(min_count, max_count)):
             coord = cls.calculate_object_coordinates(_map, _existing_objects)
-            sprite = cls.__fixtures_provider.load(os.path.join(texture_path, image_name))
-            yield Objects.Ally(sprite, action, coord)
+            fixture = Fixture(os.path.join(texture_path, image_name))
+            yield Objects.Ally(fixture, action, coord)
 
 
 class EndMap(MapFactory):
     class Map:
-        def __init__(self, special_fixtures_provider: SpecialFixturesProvider):
+        def __init__(self):
             self.__map = ['000000000000000000000000000000000000000',
                           '0                                     0',
                           '0                                     0',
@@ -161,12 +151,10 @@ class EndMap(MapFactory):
                           '000000000000000000000000000000000000000'
                           ]
             self.__map = list(map(list, self.__map))
-            self.__special_fixtures_provider = special_fixtures_provider
 
             for i in self.__map:
                 for j in range(len(i)):
-                    i[j] = self.__special_fixtures_provider.get_wall() if i[j] == '0' \
-                        else self.__special_fixtures_provider.get_floor_1()
+                    i[j] = SpecialFixtures.WALL if i[j] == '0' else SpecialFixtures.FLOOR_1
 
         def get_map(self):
             return self.__map
@@ -275,16 +263,8 @@ class RandomMap(MapFactory):
 
 
 class LevelsProvider:
-    def __init__(
-            self,
-            levels_settings_file_path: str,
-            settings_provider: SettingsProvider,
-            fixtures_provider: FixturesProvider,
-            special_fixtures_provider: SpecialFixturesProvider
-    ):
+    def __init__(self, levels_settings_file_path: str, settings_provider: SettingsProvider):
         self.__settings_provider = settings_provider
-        self.__fixtures_provider = fixtures_provider
-        self.__special_fixtures_provider = special_fixtures_provider
         self.__levels = self.__load_levels(levels_settings_file_path)
 
     def get_levels(self) -> List[Level]:
@@ -303,13 +283,12 @@ class LevelsProvider:
 
     def __create_level(self, map_factory: Type[MapFactory], loader, node):
         map_factory.register_settings_provider(self.__settings_provider)
-        map_factory.register_fixtures_provider(self.__fixtures_provider)
-        map_factory.register_special_fixtures_provider(self.__special_fixtures_provider)
 
         return map_factory.from_yaml(loader, node)
 
-    def __create_end_level(self):
-        _map = EndMap.Map(self.__special_fixtures_provider)
+    @staticmethod
+    def __create_end_level():
+        _map = EndMap.Map()
         _obj = EndMap.Objects()
 
         return Level(_map, _obj)

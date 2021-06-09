@@ -5,7 +5,6 @@ import numpy as np
 import EventHandlers
 from Event import Event
 from EventHandlers import EventHandler
-from Images import FixturesProvider, SpecialFixturesProvider
 from Logic import GameEngine
 from Objects import Hero, Ally
 from ScreenEngine import *
@@ -25,12 +24,9 @@ class KnightInTheDungeonGame:
         pygame.init()
         pygame.display.set_caption("MyRPG")
 
-        self.__display = pygame.display.set_mode(KnightInTheDungeonGame.SCREEN_DIM)
-        self.__settings_provider = SettingsProvider(KnightInTheDungeonGame.SETTINGS_FILE_PATH)
-        self.__fixtures_provider = FixturesProvider(KnightInTheDungeonGame.DEFAULT_SPRITE_SIZE)
-        self.__special_fixtures_provider = SpecialFixturesProvider(self.__fixtures_provider)
-
-        self.__start_game(KnightInTheDungeonGame.DEFAULT_SPRITE_SIZE)
+        self.__display = pygame.display.set_mode(self.SCREEN_DIM)
+        self.__settings_provider = SettingsProvider(self.SETTINGS_FILE_PATH)
+        self.__start_game(self.DEFAULT_SPRITE_SIZE)
 
         return self
 
@@ -39,9 +35,7 @@ class KnightInTheDungeonGame:
         pygame.quit()
 
     def __start_game(self, sprite_size):
-        self.__levels_provider = LevelsProvider(KnightInTheDungeonGame.LEVELS_FILE_PATH,
-                                                self.__settings_provider, self.__fixtures_provider,
-                                                self.__special_fixtures_provider)
+        self.__levels_provider = LevelsProvider(self.LEVELS_FILE_PATH, self.__settings_provider)
         self.__hero = self.__create_hero()
         self.__engine = GameEngine()
         self.__engine.sprite_size = sprite_size
@@ -51,30 +45,31 @@ class KnightInTheDungeonGame:
         self.__event_handler.update(
             Event(EventHandlers.RELOAD_GAME_EVENT, Ally.InteractedWithHeroEventPayload(self.__hero)))
 
-        self.__drawer = self.__create_drawer()
+        self.__drawer = self.__create_drawer(sprite_size)
         self.__drawer.connect_engine(self.__engine)
 
     def __create_hero(self):
-        hero_icon = self.__fixtures_provider.load(KnightInTheDungeonGame.HERO_FIXTURE_PATH)
+        hero_icon = Fixture(self.HERO_FIXTURE_PATH)
         hero_statistic = ObjectStatistic(strength=20, endurance=20, intelligence=5, luck=5)
         hero = Hero(hero_statistic, hero_icon)
 
         return hero
 
     @staticmethod
-    def __create_drawer():
+    def __create_drawer(sprite_size):
         screen_handler = ScreenHandle((0, 0))
         game_over_window = GameOverWindow((500, 200), pygame.SRCALPHA, (0, 0), screen_handler)
         help_window = HelpWindow((700, 500), pygame.SRCALPHA, (150, 140), game_over_window)
-        info_window = InfoWindow((160, 600), (50, 50), help_window)
+        info_window = InfoWindow((160, 480), (50, 50), help_window)
         progress_bar = ProgressBar((640, 120), (640, 0), info_window)
-        game_surface = GameSurface((640, 480), pygame.SRCALPHA, (0, 480), progress_bar)
+        mini_map_surface = GameSurface((160, 120), pygame.SRCALPHA, 8, (0, 480), progress_bar)
+        game_surface = GameSurface((640, 480), pygame.SRCALPHA, sprite_size, (640, 480), mini_map_surface)
 
         return game_surface
 
     def run(self):
         while self.__engine.working:
-            if KnightInTheDungeonGame.KEYBOARD_CONTROL:
+            if self.KEYBOARD_CONTROL:
                 self.__handle_keyboard_events()
             else:
                 self.__handle_autoplay_events()
@@ -109,7 +104,7 @@ class KnightInTheDungeonGame:
 
     def __change_sprite_size(self, sprite_size):
         if 1 <= sprite_size <= 80:
-            self.__fixtures_provider.set_sprite_size(sprite_size)
+            self.__drawer.set_sprite_size(sprite_size)
             self.__engine.sprite_size = sprite_size
 
     def __handle_restart_game_event(self, event):

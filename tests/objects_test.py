@@ -6,7 +6,7 @@ class TestObjects:
     __image = "some value for image"
     __statistic = ObjectStatistic(strength=20, endurance=20, intelligence=5, luck=5)
     __default_hero_properties = {
-        'image': __image,
+        'fixture': __image,
         'position': [1, 1],
         'stats_strength': __statistic.strength,
         'stats_endurance': __statistic.endurance,
@@ -147,7 +147,7 @@ class TestObjects:
 
     @staticmethod
     def __test_hero_properties(hero, desired_properties):
-        assert hero.image == desired_properties['image'], "Image of hero object is not equal to expected."
+        assert hero.fixture == desired_properties['fixture'], "Image of hero object is not equal to expected."
         assert hero.position == desired_properties['position'], "Position of hero object is different from expected one"
         assert hero.stats.strength == desired_properties[
             'stats_strength'], "Strength of hero object is different from expected one"

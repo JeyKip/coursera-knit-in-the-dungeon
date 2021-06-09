@@ -2,11 +2,11 @@ import collections
 
 import pygame
 
+from Images import Fixture
 from Settings import Colors
 
 
 class ScreenHandle(pygame.Surface):
-
     def __init__(self, *args, **kwargs):
         self.background_color = Colors.WOODEN
         self.engine = None
@@ -32,15 +32,25 @@ class ScreenHandle(pygame.Surface):
 
 
 class GameSurface(ScreenHandle):
-
     def __init__(self, *args, **kwargs):
-        self.left_corner_x = 0
-        self.left_corner_y = 0
+        self.__left_corner_x = 0
+        self.__left_corner_y = 0
+        self.__sprite_size = 1
+
+        if len(args) > 2:
+            self.__sprite_size = args[-3]
+            args = args[:-3] + args[-2:]
 
         super().__init__(*args, **kwargs)
 
     def connect_engine(self, engine):
         super().connect_engine(engine)
+
+    def set_sprite_size(self, value):
+        if not isinstance(value, int) or value < 1:
+            raise ValueError(f"Incorrect value '{value}' for sprite size: it should be a positive integer value.")
+
+        self.__sprite_size = value
 
     def draw_hero(self):
         self.engine.hero.draw(self)
@@ -61,40 +71,40 @@ class GameSurface(ScreenHandle):
     def get_hero_shift(self, screen_width, screen_height):
         hero_x, hero_y = self.engine.hero.position
 
-        right_corner_x = self.left_corner_x + screen_width
-        right_corner_y = self.left_corner_y + screen_height
+        right_corner_x = self.__left_corner_x + screen_width
+        right_corner_y = self.__left_corner_y + screen_height
 
-        shift_x = self.get_shift(hero_x, self.left_corner_x, right_corner_x)
-        shift_y = self.get_shift(hero_y, self.left_corner_y, right_corner_y)
+        shift_x = self.get_shift(hero_x, self.__left_corner_x, right_corner_x)
+        shift_y = self.get_shift(hero_y, self.__left_corner_y, right_corner_y)
 
         return shift_x, shift_y
 
     def recalculate_map_position(self):
-        sprite_size = self.engine.sprite_size
-        screen_width, screen_height = [size / sprite_size for size in self.get_size()]
+        screen_width, screen_height = [size / self.__sprite_size for size in self.get_size()]
         map_height = len(self.engine.map)
         map_width = len(self.engine.map[0]) if map_height > 0 else 0
         shift_x, shift_y = self.get_hero_shift(screen_width, screen_height)
 
-        self.left_corner_x += shift_x
-        self.left_corner_y += shift_y
+        self.__left_corner_x += shift_x
+        self.__left_corner_y += shift_y
 
-        if self.left_corner_x < 0 or screen_width > map_width:
-            self.left_corner_x = 0
-        elif self.left_corner_x + screen_width > map_width - 1:
-            self.left_corner_x -= int(self.left_corner_x + screen_width - map_width)
+        if self.__left_corner_x < 0 or screen_width > map_width:
+            self.__left_corner_x = 0
+        elif self.__left_corner_x + screen_width > map_width - 1:
+            self.__left_corner_x -= int(self.__left_corner_x + screen_width - map_width)
 
-        if self.left_corner_y < 0 or screen_height > map_height:
-            self.left_corner_y = 0
-        elif self.left_corner_y + screen_height > map_height - 1:
-            self.left_corner_y -= int(self.left_corner_y + screen_height - map_height)
+        if self.__left_corner_y < 0 or screen_height > map_height:
+            self.__left_corner_y = 0
+        elif self.__left_corner_y + screen_height > map_height - 1:
+            self.__left_corner_y -= int(self.__left_corner_y + screen_height - map_height)
 
     def draw_map(self):
         if self.engine.map:
-            for i in range(len(self.engine.map[0]) - self.left_corner_x):
-                for j in range(len(self.engine.map) - self.left_corner_y):
-                    self.blit(self.engine.map[self.left_corner_y + j][self.left_corner_x + i].sprite,
-                              (i * self.engine.sprite_size, j * self.engine.sprite_size))
+            for i in range(len(self.engine.map[0]) - self.__left_corner_x):
+                for j in range(len(self.engine.map) - self.__left_corner_y):
+                    cell = self.engine.map[self.__left_corner_y + j][self.__left_corner_x + i]
+                    sprite = cell.sprite(self.__sprite_size, self.__sprite_size)
+                    self.blit(sprite, (i * self.__sprite_size, j * self.__sprite_size))
         else:
             self.fill(Colors.WHITE)
 
@@ -102,9 +112,10 @@ class GameSurface(ScreenHandle):
         for obj in self.engine.get_objects():
             obj.draw(self)
 
-    def draw_object(self, sprite, coord):
-        self.blit(sprite, ((coord[0] - self.left_corner_x) * self.engine.sprite_size,
-                           (coord[1] - self.left_corner_y) * self.engine.sprite_size))
+    def draw_object(self, fixture: Fixture, coord):
+        self.blit(fixture.sprite(self.__sprite_size, self.__sprite_size),
+                  ((coord[0] - self.__left_corner_x) * self.__sprite_size,
+                   (coord[1] - self.__left_corner_y) * self.__sprite_size))
 
     def draw(self, canvas):
         self.recalculate_map_position()
@@ -184,7 +195,7 @@ class InfoWindow(ScreenHandle):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.len = 30
+        self.len = 25
         clear = []
         self.data = collections.deque(clear, maxlen=self.len)
 

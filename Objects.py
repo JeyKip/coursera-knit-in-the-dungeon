@@ -5,17 +5,17 @@ from Event import Event, EventPayload
 
 
 class AbstractObject(ABC):
-    def __init__(self, image=None, position=None):
-        self._image = image
+    def __init__(self, fixture=None, position=None):
+        self._fixture = fixture
         self._position = position
 
     @property
-    def image(self):
-        return self._image
+    def fixture(self):
+        return self._fixture
 
-    @image.setter
-    def image(self, value):
-        self._image = value
+    @fixture.setter
+    def fixture(self, value):
+        self._fixture = value
 
     @property
     def position(self):
@@ -26,7 +26,7 @@ class AbstractObject(ABC):
         self._position = value
 
     def draw(self, display):
-        display.draw_object(self.image.sprite, self.position)
+        display.draw_object(self.fixture, self.position)
 
 
 class Interactive(ABC):
@@ -44,8 +44,8 @@ class Ally(AbstractObject, Interactive):
         def hero(self):
             return self.__hero
 
-    def __init__(self, image, action, position):
-        super().__init__(image, position)
+    def __init__(self, fixture, action, position):
+        super().__init__(fixture, position)
 
         self._action = action
 
@@ -54,8 +54,8 @@ class Ally(AbstractObject, Interactive):
 
 
 class Creature(AbstractObject):
-    def __init__(self, image, stats, position):
-        super().__init__(image, position)
+    def __init__(self, fixture, stats, position):
+        super().__init__(fixture, position)
 
         self._stats = stats
         self._max_hp = self.calc_max_HP()
@@ -125,13 +125,13 @@ class Creature(AbstractObject):
 class Hero(Creature):
     _default_position = [1, 1]
 
-    def __init__(self, stats, image):
+    def __init__(self, stats, fixture):
         self._level = 1
         self._exp = 0
         self._next_level_exp = self.calc_next_level_exp()
         self._gold = 0
 
-        super().__init__(image, stats, self._default_position.copy())
+        super().__init__(fixture, stats, self._default_position.copy())
 
     @property
     def level(self):
@@ -264,8 +264,8 @@ class Effect(Hero):
         self._base.exp = value
 
     @property
-    def image(self):
-        return self._base.image
+    def fixture(self):
+        return self._base.fixture
 
     @property
     def next_level_exp(self):
@@ -343,10 +343,10 @@ class Enemy(Creature, Interactive):
         def enemy(self):
             return self.__enemy
 
-    def __init__(self, image, stats, xp, position):
+    def __init__(self, fixture, stats, xp, position):
         self.xp = xp
 
-        super().__init__(image, stats, position)
+        super().__init__(fixture, stats, position)
 
     def interact(self, engine, hero):
         # min damage is 50% of the strength of enemy

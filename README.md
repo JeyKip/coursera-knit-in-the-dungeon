@@ -1,1 +1,1 @@
-# coursera-knit-in-the-dungeon
+# Simple desktop game developed using Python.
